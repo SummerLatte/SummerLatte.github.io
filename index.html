@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stopwatch</title>
+    <style>
+      /* 重置浏览器默认的边距 */
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #000;
+        color: #fff;
+        font-family: Arial, sans-serif; /* 为了让页面主体不被顶部固定内容遮挡，添加上内边距 */
+        padding-top: 170px; /* 保持按钮在底部固定 */
+        padding-bottom: 70px;
+      } /* 固定在页面顶部显示时间 */
+      #time {
+        position: fixed;
+        top: 10px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 7em;
+      } /* 固定在时间下方显示表头 */
+      #lapHeader {
+        position: fixed;
+        top: 190px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50%;
+        text-align: center;
+        margin: 0; /* 清除默认 margin */
+        padding: 0 20px;
+        display: flex;
+        justify-content: space-between;
+        font-weight: bold;
+        padding-bottom: 10px;
+        color: #555;
+      }
+      #lapHeader .inner {
+        display: inline-flex;
+        width: 100%;
+        justify-content: space-between;
+        border-bottom: 1px solid #555;
+        padding-bottom: 10px;
+      }
+      /* 固定在表头下方显示计次记录（如记录较多，可滚动） */
+      #laps {
+        position: fixed;
+        top: 220px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50%;
+        max-height: calc(100vh - 210px);
+        overflow-y: auto;
+        margin: 0;
+        padding: 10 20px;
+      } /* 每一条 lap 记录的格式 */
+      #laps div {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        margin-top: 15px;
+        padding: 10 20px;
+      } /* 底部按钮 */
+      #buttonContainer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #000;
+        padding: 10px 0;
+        display: flex;
+        justify-content: center;
+      }
+      button {
+        font-size: 1.5em;
+        margin: 5px;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 300px;
+      }
+      #startStopBtn {
+        background-color: #4caf50; /* 绿色 */
+        color: white;
+      }
+      #resetLapBtn {
+        background-color: #f44336; /* 红色 */
+        color: white;
+      }
+      #lapHeader span,
+      #laps div span {
+        flex: 1;
+      }
+      #lapHeader span:first-child,
+      #laps div span:first-child {
+        text-align: left;
+      }
+      #lapHeader span:nth-child(2),
+      #laps div span:nth-child(2) {
+        text-align: center;
+      }
+      #lapHeader span:last-child,
+      #laps div span:last-child {
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="time">00:00.00</div>
+    <div id="lapHeader">
+      <div class="inner">
+        <span>Lap No</span>
+        <span>Split</span>
+        <span>Total</span>
+      </div>
+    </div>
+    <div id="laps"></div>
+    <div id="buttonContainer">
+      <button id="startStopBtn" onclick="startStop()">Start</button>
+      <button id="resetLapBtn" onclick="resetLap()">Reset</button>
+    </div>
+    <script>
+      let timer;
+      let milliseconds = 0;
+      let running = false;
+      let lapStartTime = 0;
+      let lapCount = 0;
+      let totalLapTime = 0;
+      let firstStart = true;
+      function startStop() {
+        if (running) {
+          stop();
+          document.getElementById("startStopBtn").innerText = "Start";
+          document.getElementById("resetLapBtn").innerText = "Reset";
+        } else {
+          start();
+          document.getElementById("startStopBtn").innerText = "Stop";
+          document.getElementById("resetLapBtn").innerText = "Lap";
+          if (firstStart) {
+            firstStart = false;
+            lap();
+          }
+        }
+      }
+
+      function start() {
+        running = true;
+        if (firstStart) {
+          lapStartTime = milliseconds;
+        }
+        timer = setInterval(updateTime, 10);
+      }
+
+      function stop() {
+        running = false;
+        clearInterval(timer);
+      }
+
+      function resetLap() {
+        if (running) {
+          lap();
+        } else {
+          reset();
+        }
+      }
+
+      function reset() {
+        stop();
+        milliseconds = 0;
+        lapCount = 0;
+        totalLapTime = 0;
+        firstStart = true;
+        document.getElementById("time").innerText = formatTime(milliseconds);
+        document.getElementById("laps").innerHTML = "";
+      }
+
+      function lap() {
+        lapCount++;
+        const lapTime = milliseconds - lapStartTime;
+        totalLapTime += lapTime;
+        const lapDiv = document.createElement("div");
+        lapDiv.innerHTML = `<span>Lap ${lapCount}</span> <span>${formatTime(
+          lapTime
+        )}</span> <span>${formatTime(totalLapTime)}</span>`;
+        const lapsDiv = document.getElementById("laps");
+
+        // 添加分割线
+        if (lapsDiv.firstChild) {
+          const separator = document.createElement("div");
+          separator.style.borderTop = "1px solid #333";
+          lapsDiv.insertBefore(separator, lapsDiv.firstChild);
+        }
+
+        lapsDiv.insertBefore(lapDiv, lapsDiv.firstChild);
+        lapStartTime = milliseconds;
+      }
+
+      function updateTime() {
+        milliseconds += 10;
+        document.getElementById("time").innerText = formatTime(milliseconds);
+        if (running) {
+          const currentLapTime = milliseconds - lapStartTime;
+          const lapsDiv = document.getElementById("laps");
+          if (lapsDiv.firstChild) {
+            lapsDiv.firstChild.innerHTML = `<span>Lap ${lapCount}</span> <span>${formatTime(
+              currentLapTime
+            )}</span> <span>${formatTime(
+              totalLapTime + currentLapTime
+            )}</span>`;
+          }
+        }
+      }
+
+      function formatTime(milliseconds) {
+        const mins = Math.floor((milliseconds % 3600000) / 60000);
+        const secs = Math.floor((milliseconds % 60000) / 1000);
+        const ms = Math.floor((milliseconds % 1000) / 10);
+        return `${pad(mins)}:${pad(secs)}.${pad(ms, 2)}`;
+      }
+
+      function pad(num, size = 2) {
+        return num.toString().padStart(size, "0");
+      }
+    </script>
+  </body>
+</html>
