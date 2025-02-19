@@ -5,13 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Stopwatch</title>
     <style>
+      @font-face {
+  font-family: 'Lekton';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(https://cdn.jsdelivr.net/fontsource/fonts/lekton@latest/latin-400-normal.woff2) format('woff2'), url(https://cdn.jsdelivr.net/fontsource/fonts/lekton@latest/latin-400-normal.woff) format('woff');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
       /* 重置浏览器默认的边距 */
       body {
         margin: 0;
         padding: 0;
         background-color: #000;
         color: #fff;
-        font-family: Arial, sans-serif; /* 为了让页面主体不被顶部固定内容遮挡，添加上内边距 */
+        font-family: 'Lekton', Arial, sans-serif; /* 为了让页面主体不被顶部固定内容遮挡，添加上内边距 */
         padding-top: 170px; /* 保持按钮在底部固定 */
         padding-bottom: 70px;
       } /* 固定在页面顶部显示时间 */
@@ -35,7 +43,8 @@
         display: flex;
         justify-content: space-between;
         font-weight: bold;
-        padding-bottom: 10px;
+        font-size: 1.2em;
+        padding-bottom: 0px;
         color: #555;
       }
       #lapHeader .inner {
@@ -56,6 +65,14 @@
         overflow-y: auto;
         margin: 0;
         padding: 10 20px;
+        font-size: 1.2em;
+        /* Hide scrollbar for Firefox and IE/Edge */
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      #laps::-webkit-scrollbar {
+        display: none;
       } /* 每一条 lap 记录的格式 */
       #laps div {
         display: flex;
@@ -95,6 +112,9 @@
       #laps div span {
         flex: 1;
       }
+      #laps div:first-child {
+        margin-top: 20px;
+      }
       #lapHeader span:first-child,
       #laps div span:first-child {
         text-align: left;
@@ -131,10 +151,11 @@
       let lapCount = 0;
       let totalLapTime = 0;
       let firstStart = true;
+      let lapTimes = [];
       function startStop() {
         if (running) {
           stop();
-          document.getElementById("startStopBtn").innerText = "Start";
+          document.getElementById("startStopBtn").innerText = "Resume";
           document.getElementById("resetLapBtn").innerText = "Reset";
         } else {
           start();
@@ -174,8 +195,10 @@
         lapCount = 0;
         totalLapTime = 0;
         firstStart = true;
+        lapTimes = [];
         document.getElementById("time").innerText = formatTime(milliseconds);
         document.getElementById("laps").innerHTML = "";
+        document.getElementById("startStopBtn").innerText = "Start";
       }
 
       function lap() {
@@ -196,6 +219,9 @@
         }
 
         lapsDiv.insertBefore(lapDiv, lapsDiv.firstChild);
+        lapTimes.push(lapTime);
+        lapDiv.setAttribute("data-lapTime", lapTime);
+        highlightLaps();
         lapStartTime = milliseconds;
       }
 
@@ -224,6 +250,20 @@
 
       function pad(num, size = 2) {
         return num.toString().padStart(size, "0");
+      }
+
+      function highlightLaps() {
+        if (lapTimes.length < 3) return;
+        const minTime = Math.min(...lapTimes);
+        const maxTime = Math.max(...lapTimes);
+        const lapsDiv = document.getElementById("laps");
+        const lapItems = lapsDiv.querySelectorAll("[data-lapTime]");
+        lapItems.forEach(item => {
+          const timeValue = parseInt(item.getAttribute("data-lapTime"));
+          item.style.color = "";
+          if (timeValue === minTime) item.style.color = "green";
+          if (timeValue === maxTime) item.style.color = "red";
+        });
       }
     </script>
   </body>
